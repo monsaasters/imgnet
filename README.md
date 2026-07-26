@@ -608,6 +608,23 @@ model = fit(trainer)
 ```
 
 ---
+
+## Liveness & Reporting
+
+The demo app also includes a lightweight liveness-check prototype and report
+export endpoints. These are not a full anti-spoofing model, but demonstrate
+how IMG metrics could be used in a liveness workflow.
+
+Web demo endpoints:
+- `POST /api/liveness` — heuristic liveness check from 2 uploaded images
+- `POST /api/report/csv` — export comparison/liveness result as CSV
+- `POST /api/report/json` — export result as JSON with generated timestamp
+
+UI:
+- **Check Liveness** button on the demo page
+- **Export CSV** / **Export JSON** buttons to download result files
+
+---
 ## Citation
  
 If you use this work, please cite via:

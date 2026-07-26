@@ -195,6 +195,9 @@
 
     <div class="actions">
       <button id="compare">Compare</button>
+      <button id="liveness" class="secondary">Check Liveness</button>
+      <button id="export_csv" class="secondary">Export CSV</button>
+      <button id="export_json" class="secondary">Export JSON</button>
       <button id="clear" class="secondary">Clear</button>
     </div>
 
@@ -208,6 +211,7 @@
     </div>
 
     <div class="verdict" id="verdict" style="display:none"></div>
+    <div class="verdict" id="liveness_verdict" style="display:none"></div>
     <div class="note" id="note">Checking model status...</div>
   </div>
 
@@ -325,6 +329,97 @@
       } finally {
         $('compare').disabled = false;
         $('compare').textContent = 'Compare';
+      }
+    });
+
+    $('liveness').addEventListener('click', async () => {
+      const fb = $('feedback');
+      fb.innerHTML = '';
+      if (!srcA || !srcB) {
+        fb.innerHTML = '<div class="error">Please upload both images first.</div>';
+        return;
+      }
+      const toBlob = async dataUrl => {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      };
+      const form = new FormData();
+      form.append('image_a', await toBlob(srcA), 'a.jpg');
+      form.append('image_b', await toBlob(srcB), 'b.jpg');
+      try {
+        $('liveness').disabled = true;
+        $('liveness').textContent = 'Checking...';
+        const res = await fetch('/api/liveness', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) {
+          fb.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
+          return;
+        }
+        const verdict = $('liveness_verdict');
+        verdict.style.display = 'block';
+        verdict.textContent = data.live ? 'LIVE' : 'NOT LIVE';
+        verdict.style.borderColor = data.live ? '#10b981' : '#ef4444';
+        verdict.style.color = data.live ? '#10b981' : '#ef4444';
+        $('v_img_sign').textContent = Number(data.img_sign).toFixed(4);
+        $('v_amp_img').textContent = Number(data.amp_img).toFixed(4);
+        $('v_chain').textContent = Number(data.chain_score).toFixed(4);
+        $('v_cosine').textContent = Number(data.cosine).toFixed(4);
+        $('results').style.display = 'grid';
+      } catch (exc) {
+        fb.innerHTML = `<div class="error">Request failed: ${escapeHtml(String(exc))}</div>`;
+      } finally {
+        $('liveness').disabled = false;
+        $('liveness').textContent = 'Check Liveness';
+      }
+    });
+
+    $('export_csv').addEventListener('click', async () => {
+      const payload = {
+        img_sign: $('v_img_sign').textContent,
+        amp_img: $('v_amp_img').textContent,
+        chain_score: $('v_chain').textContent,
+        cosine: $('v_cosine').textContent,
+        vote: $('verdict').textContent || '',
+        chains: 0,
+        avg_chain: 0,
+      };
+      const form = new FormData();
+      form.append('payload', JSON.stringify(payload));
+      const res = await fetch('/api/report/csv', { method: 'POST', body: form });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'imgnet_report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $('export_json').addEventListener('click', async () => {
+      const payload = {
+        img_sign: $('v_img_sign').textContent,
+        amp_img: $('v_amp_img').textContent,
+        chain_score: $('v_chain').textContent,
+        cosine: $('v_cosine').textContent,
+        vote: $('verdict').textContent || '',
+        chains: 0,
+        avg_chain: 0,
+      };
+      const form = new FormData();
+      form.append('payload', JSON.stringify(payload));
+      const res = await fetch('/api/report/json', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.report) {
+        const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'imgnet_report.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const fb = $('feedback');
+        fb.innerHTML = `<div class="error">${escapeHtml(data.error || 'Export failed')}</div>`;
       }
     });
 
