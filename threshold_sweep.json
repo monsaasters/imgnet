@@ -1,0 +1,252 @@
+{
+  "best_img_threshold": 0.5,
+  "best_img_accuracy": 1.0,
+  "best_cos_threshold": 0.55,
+  "best_cos_accuracy": 1.0,
+  "best_hybrid_threshold": 0.5,
+  "best_hybrid_accuracy": 1.0,
+  "results": [
+    {
+      "threshold": 0.5,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 0.75,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 9,
+        "UNCERTAIN": 3,
+        "DIFFERENT": 0
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.55,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 6,
+        "DIFFERENT": 0
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.6,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 6,
+        "DIFFERENT": 0
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.65,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 3,
+        "DIFFERENT": 3
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.7,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.75,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.79,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.8,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.85,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.9,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    },
+    {
+      "threshold": 0.95,
+      "img_only_accuracy": 1.0,
+      "cosine_only_accuracy": 1.0,
+      "hybrid_accuracy": 1.0,
+      "img_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "cosine_only_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "hybrid_votes": {
+        "MATCH": 6,
+        "UNCERTAIN": 0,
+        "DIFFERENT": 6
+      },
+      "total": 12
+    }
+  ]
+}
