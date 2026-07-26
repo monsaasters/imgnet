@@ -1,0 +1,139 @@
+{
+  "summary": {
+    "total": 12,
+    "accuracy": 1.0,
+    "same_count": 6,
+    "different_count": 6,
+    "vote_counts": {
+      "MATCH": 6,
+      "UNCERTAIN": 2,
+      "DIFFERENT": 4
+    },
+    "avg_img_sign": 0.5438034188034188,
+    "avg_cosine": 0.4965145782813974,
+    "accuracy_same": 1.0,
+    "accuracy_different": 1.0
+  },
+  "results": [
+    {
+      "sample_id": "pair_0",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9827086354444249,
+      "chain_score": 1.0,
+      "cosine": 0.9986005029468067,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_10",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9806576224034372,
+      "chain_score": 1.0,
+      "cosine": 0.998600155892958,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_11",
+      "label": "different",
+      "img_sign": 0.08777120315581854,
+      "amp_img": 0.728076095849436,
+      "chain_score": 0.0,
+      "cosine": -0.018118577515923665,
+      "vote": "DIFFERENT",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_1",
+      "label": "different",
+      "img_sign": 0.10552268244575937,
+      "amp_img": 0.7793723160649407,
+      "chain_score": 0.0,
+      "cosine": 0.03781720839070505,
+      "vote": "DIFFERENT",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_2",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9842682967628572,
+      "chain_score": 1.0,
+      "cosine": 0.9987461600180269,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_3",
+      "label": "different",
+      "img_sign": 0.09861932938856016,
+      "amp_img": 0.8072054818023848,
+      "chain_score": 0.0,
+      "cosine": 0.004850465425408784,
+      "vote": "UNCERTAIN",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_4",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9840923763031973,
+      "chain_score": 1.0,
+      "cosine": 0.9988361917927415,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_5",
+      "label": "different",
+      "img_sign": 0.08777120315581854,
+      "amp_img": 0.831818215906816,
+      "chain_score": 0.0,
+      "cosine": 0.019181603385106823,
+      "vote": "UNCERTAIN",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_6",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9850947673588127,
+      "chain_score": 1.0,
+      "cosine": 0.9986593957948634,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_7",
+      "label": "different",
+      "img_sign": 0.0670611439842209,
+      "amp_img": 0.7621272649088427,
+      "chain_score": 0.0,
+      "cosine": -0.06420243809282868,
+      "vote": "DIFFERENT",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_8",
+      "label": "same",
+      "img_sign": 1.0,
+      "amp_img": 0.9857933658324689,
+      "chain_score": 1.0,
+      "cosine": 0.998770005919461,
+      "vote": "MATCH",
+      "correct": true
+    },
+    {
+      "sample_id": "pair_9",
+      "label": "different",
+      "img_sign": 0.07889546351084813,
+      "amp_img": 0.7274748709109347,
+      "chain_score": 0.0,
+      "cosine": -0.0135657345805572,
+      "vote": "DIFFERENT",
+      "correct": true
+    }
+  ]
+}
