@@ -4,10 +4,8 @@ ImgNet Demo App — FastAPI + vanilla JS/HTML
 
 from __future__ import annotations
 
-import base64
 import io
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 from fastapi import FastAPI, Request
@@ -16,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image
 
 from imgnet.metrics import batch_compare, cosine_similarity, img_sign_score
-from imgnet.visualizer import compute_embedding
+from imgnet.visualizer import compute_embedding, model_status
 
 app = FastAPI(title="ImgNet Demo")
 
@@ -28,6 +26,11 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
     return (static_dir / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/api/health")
+async def health() -> dict:
+    return {"status": "ok", **model_status()}
 
 
 @app.post("/api/compare")
@@ -45,8 +48,12 @@ async def compare(request: Request) -> dict:
     except Exception as exc:
         return {"error": f"Invalid image: {exc}"}
 
-    emb_a = compute_embedding(np.array(img_a))
-    emb_b = compute_embedding(np.array(img_b))
+    try:
+        emb_a = compute_embedding(np.array(img_a))
+        emb_b = compute_embedding(np.array(img_b))
+    except Exception as exc:
+        return {"error": f"Embedding failed: {exc}"}
+
     result = batch_compare(emb_a, emb_b)
 
     return {
@@ -57,9 +64,5 @@ async def compare(request: Request) -> dict:
         "vote": result["vote"],
         "chains": result["chains"],
         "avg_chain": result["avg_chain"],
+        "model_status": model_status(),
     }
-
-
-@app.get("/api/health")
-async def health() -> dict:
-    return {"status": "ok"}

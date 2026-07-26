@@ -9,6 +9,7 @@ and demo remain functional.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -32,8 +33,28 @@ except Exception:
     _mtcnn = None
     MTCNN_OK = False
 
-_CKPT_PATH = r"C:\PythonProj\img_bnn\checkpoints_sw357_conv10_imgsign\SW357_conv10_imgsign\best_model_epoch39_plateau.pth"
 
+def _default_checkpoint_paths() -> list[Path]:
+    """Return candidate checkpoint paths in cross-platform order."""
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parent.parent.parent / "best_model_epoch39_plateau.pth",
+        here.parent.parent / "best_model_epoch39_plateau.pth",
+        Path.cwd() / "best_model_epoch39_plateau.pth",
+        Path.home() / ".imgnet" / "best_model_epoch39_plateau.pth",
+    ]
+    # Preserve existing Windows-style path if it exists
+    legacy = Path(r"C:\PythonProj\img_bnn\checkpoints_sw357_conv10_imgsign\SW357_conv10_imgsign\best_model_epoch39_plateau.pth")
+    if legacy.exists():
+        candidates.insert(0, legacy)
+    return candidates
+
+
+_CKPT_PATH = None
+for p in _default_checkpoint_paths():
+    if p.exists():
+        _CKPT_PATH = p
+        break
 
 if TORCH_OK:
     class _SWBlock(nn.Module):
@@ -99,16 +120,21 @@ if TORCH_OK:
             return self.bn(self.fc(x))
 
     _model: Optional[nn.Module] = None
-    if Path(_CKPT_PATH).exists():
+    _model_error: Optional[str] = None
+    if _CKPT_PATH is not None:
         try:
             _model = _IMGNet()
-            state = torch.load(_CKPT_PATH, map_location="cpu", weights_only=False)
+            state = torch.load(str(_CKPT_PATH), map_location="cpu", weights_only=False)
             if isinstance(state, dict) and "model" in state:
                 state = state["model"]
             _model.load_state_dict(state, strict=True)
             _model.eval()
-        except Exception:
+        except Exception as exc:
             _model = None
+            _model_error = str(exc)
+else:
+    _model = None
+    _model_error = "PyTorch is not installed."
 
 
 def _dummy_embed(img_array: np.ndarray) -> np.ndarray:
@@ -131,13 +157,38 @@ def _content_embed(img_array: np.ndarray) -> np.ndarray:
     return (emb - emb.mean()) / (emb.std() + 1e-6)
 
 
-def compute_embedding(img_array: np.ndarray) -> np.ndarray:
-    if TORCH_OK and _model is not None:
+def _crop_face(img_rgb: np.ndarray) -> np.ndarray:
+    """Detect and crop face to 112x112. If detection fails, resize instead."""
+    if MTCNN_OK and _mtcnn is not None:
         try:
-            t = torch.from_numpy(img_array.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0)
+            pil = Image.fromarray(img_rgb)
+            face = _mtcnn(pil)
+            if face is not None:
+                arr = face.permute(1, 2, 0).cpu().numpy()
+                return np.clip(arr, 0, 255).astype(np.uint8)
+        except Exception:
+            pass
+    return np.array(Image.fromarray(img_rgb).resize((112, 112), Image.Resampling.BILINEAR), dtype=np.uint8)
+
+
+def compute_embedding(img_array: np.ndarray, *, use_real_model: bool = True) -> np.ndarray:
+    if use_real_model and TORCH_OK and _model is not None:
+        try:
+            cropped = _crop_face(img_array)
+            t = torch.from_numpy(cropped.astype(np.float32) / 255.0).permute(2, 0, 1).unsqueeze(0)
             with torch.no_grad():
                 emb = _model(t).squeeze(0).cpu().numpy()
             return emb
         except Exception:
             pass
     return _content_embed(img_array)
+
+
+def model_status() -> dict:
+    return {
+        "torch": bool(TORCH_OK),
+        "mtcnn": bool(MTCNN_OK),
+        "checkpoint": str(_CKPT_PATH) if _CKPT_PATH else None,
+        "model_loaded": bool(_model is not None),
+        "error": _model_error,
+    }

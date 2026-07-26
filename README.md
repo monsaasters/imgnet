@@ -580,6 +580,34 @@ Outputs:
  
 ---
  
+## Training
+
+This repo includes a modular training pipeline for IMGNet-style models.
+
+Key features:
+- Reproduced `SWBlock` + `Conv2-10` architecture
+- Relational loss based on IMG Sign Score MSE
+- `PairDataset` with positive/negative pairs and augmentation
+- Checkpointing with resume support
+- `TrainConfig` dataclass for reproducible experiments
+- Optional **hybrid mode**: combine IMG Sign loss with cosine loss
+
+Example:
+```python
+from imgnet.train import IMGNet, TrainConfig, build_trainer, fit
+
+cfg = TrainConfig(
+    data_root="./data/casia-webface",
+    ckpt_root="./checkpoints",
+    num_epochs=50,
+    hybrid_mode=True,
+    hybrid_cosine_weight=0.5,
+)
+trainer = build_trainer(cfg)
+model = fit(trainer)
+```
+
+---
 ## Citation
  
 If you use this work, please cite via:

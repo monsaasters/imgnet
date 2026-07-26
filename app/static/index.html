@@ -101,6 +101,10 @@
       color: #e5e7eb;
       border: 1px solid #1f2937;
     }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .results {
       margin-top: 16px;
       display: grid;
@@ -141,12 +145,30 @@
       color: #fecaca;
       border: 1px solid #991b1b;
     }
+    .info {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #1e3a8a;
+      color: #dbeafe;
+      border: 1px solid #2563eb;
+    }
     .note {
       margin-top: 14px;
       font-size: 12px;
       color: #9ca3af;
       text-align: center;
     }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .status-dot.ok { background: #10b981; }
+    .status-dot.warn { background: #f59e0b; }
+    .status-dot.bad { background: #ef4444; }
     @media (max-width: 760px) {
       .grid { grid-template-columns: 1fr; }
       .results { grid-template-columns: repeat(2, 1fr); }
@@ -156,8 +178,8 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>ImgNet Demo — Similarity</h1>
-      <div class="badge" id="status">local</div>
+      <h1>ImgNet Demo — Face Similarity</h1>
+      <div class="badge" id="status">loading</div>
     </header>
 
     <div class="grid">
@@ -186,7 +208,7 @@
     </div>
 
     <div class="verdict" id="verdict" style="display:none"></div>
-    <div class="note">Uses generic IMG metrics. Face model fallback is content-based when no checkpoint is present.</div>
+    <div class="note" id="note">Checking model status...</div>
   </div>
 
   <script>
@@ -233,6 +255,35 @@
       fileA.value = ''; fileB.value = '';
     });
 
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const badge = $('status');
+        const note = $('note');
+        if (data.model_loaded) {
+          badge.textContent = 'model ready';
+          badge.style.borderColor = '#10b981';
+          badge.style.color = '#10b981';
+          note.textContent = 'Using IMGNet Conv10 model. Upload two face photos to compare.';
+        } else {
+          badge.textContent = 'fallback mode';
+          badge.style.borderColor = '#f59e0b';
+          badge.style.color = '#f59e0b';
+          const missing = [];
+          if (!data.torch) missing.push('PyTorch');
+          if (!data.mtcnn) missing.push('MTCNN');
+          if (!data.checkpoint) missing.push('checkpoint');
+          note.textContent = `Model not loaded: ${missing.join(', ')}. Using generic embedding fallback. Results are still computed with IMG metrics, but may not reflect real face-verification behavior.`;
+        }
+      } catch (exc) {
+        $('status').textContent = 'unreachable';
+        $('note').textContent = 'Cannot reach backend.';
+      }
+    }
+
+    loadStatus();
+
     $('compare').addEventListener('click', async () => {
       const fb = $('feedback');
       fb.innerHTML = '';
@@ -248,11 +299,16 @@
       form.append('image_a', await toBlob(srcA), 'a.jpg');
       form.append('image_b', await toBlob(srcB), 'b.jpg');
       try {
+        $('compare').disabled = true;
+        $('compare').textContent = 'Comparing...';
         const res = await fetch('/api/compare', { method: 'POST', body: form });
         const data = await res.json();
         if (data.error) {
           fb.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
           return;
+        }
+        if (!data.model_loaded) {
+          fb.innerHTML = `<div class="info">Note: backend is in fallback mode, so this comparison uses a generic embedding rather than the IMGNet face model.</div>`;
         }
         $('v_img_sign').textContent = Number(data.img_sign).toFixed(4);
         $('v_amp_img').textContent = Number(data.amp_img).toFixed(4);
@@ -266,6 +322,9 @@
         verdict.style.color = voteColor(data.vote);
       } catch (exc) {
         fb.innerHTML = `<div class="error">Request failed: ${escapeHtml(String(exc))}</div>`;
+      } finally {
+        $('compare').disabled = false;
+        $('compare').textContent = 'Compare';
       }
     });
 
