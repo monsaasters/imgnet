@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IMGNet Offline KYC</title>
+  <style>
+    :root {
+      bg: #0b0f1a;
+      card: #111827;
+      border: #1f2937;
+      text: #e5e7eb;
+      muted: #9ca3af;
+      accent: #6366f1;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #0b0f1a;
+      color: #e5e7eb;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      background: #111827;
+    }
+    h1 {
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      color: #9ca3af;
+    }
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      background: #111827;
+      padding: 16px;
+    }
+    .drop {
+      border: 1px dashed #374151;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: border-color .15s ease;
+    }
+    .drop.dragover { border-color: #6366f1; color: #e5e7eb; }
+    .preview {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview img {
+      max-height: 180px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+    }
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #6366f1;
+      color: white;
+    }
+    button.secondary {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .verdict {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #0b0f1a;
+    }
+    .error {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #7f1d1d;
+      color: #fecaca;
+      border: 1px solid #991b1b;
+    }
+    .info {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #1e3a8a;
+      color: #dbeafe;
+      border: 1px solid #2563eb;
+    }
+    .metrics {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .metric-box {
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      background: #0b0f1a;
+      padding: 10px;
+      text-align: center;
+    }
+    .metric-label {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>IMGNet Offline KYC Verification</h1>
+      <div class="badge" id="status">loading</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="drop" id="drop_selfie">Drop Selfie / Upload<input type="file" id="selfie" accept="image/*" hidden /></div>
+        <div class="preview" id="preview_selfie"></div>
+      </div>
+      <div class="card">
+        <div class="drop" id="drop_ktp">Drop KTP / Upload<input type="file" id="ktp" accept="image/*" hidden /></div>
+        <div class="preview" id="preview_ktp"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="verify">Verify Identity</button>
+      <button id="export_csv" class="secondary">Export CSV</button>
+      <button id="export_json" class="secondary">Export JSON</button>
+      <button id="clear" class="secondary">Clear</button>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div class="metrics" id="metrics" style="display:none">
+      <div class="metric-box">
+        <div class="metric-label">IMG Sign</div>
+        <div class="metric-value" id="m_img_sign">—</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">AMP IMG</div>
+        <div class="metric-value" id="m_amp_img">—</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Chain</div>
+        <div class="metric-value" id="m_chain">—</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Cosine</div>
+        <div class="metric-value" id="m_cosine">—</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict" style="display:none"></div>
+    <div class="note" id="note">Checking model status...</div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const dropSelfie = $('drop_selfie');
+    const dropKtp = $('drop_ktp');
+    const selfieInput = $('selfie');
+    const ktpInput = $('ktp');
+    let selfieSrc = null, ktpSrc = null;
+
+    function wire(drop, input, preview, setSrc) {
+      drop.addEventListener('click', () => input.click());
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault();
+        drop.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) read(file, preview, setSrc);
+      });
+      input.addEventListener('change', () => {
+        if (input.files[0]) read(input.files[0], preview, setSrc);
+      });
+    }
+
+    function read(file, preview, setSrc) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSrc(reader.result);
+        preview.innerHTML = `<img src="${reader.result}" alt="preview" />`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    wire(dropSelfie, selfieInput, $('preview_selfie'), v => selfieSrc = v);
+    wire(dropKtp, ktpInput, $('preview_ktp'), v => ktpSrc = v);
+
+    $('clear').addEventListener('click', () => {
+      selfieSrc = null; ktpSrc = null;
+      $('preview_selfie').innerHTML = ''; $('preview_ktp').innerHTML = '';
+      $('metrics').style.display = 'none';
+      $('verdict').style.display = 'none';
+      $('feedback').innerHTML = '';
+      selfieInput.value = ''; ktpInput.value = '';
+    });
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const badge = $('status');
+        const note = $('note');
+        if (data.model_loaded) {
+          badge.textContent = 'model ready';
+          badge.style.borderColor = '#10b981';
+          badge.style.color = '#10b981';
+          note.textContent = 'Using IMGNet Conv10 model. Upload selfie + KTP to verify.';
+        } else {
+          badge.textContent = 'fallback mode';
+          badge.style.borderColor = '#f59e0b';
+          badge.style.color = '#f59e0b';
+          const missing = [];
+          if (!data.torch) missing.push('PyTorch');
+          if (!data.mtcnn) missing.push('MTCNN');
+          if (!data.checkpoint) missing.push('checkpoint');
+          note.textContent = `Model not loaded: ${missing.join(', ')}. Using generic embedding fallback. Results may not reflect real face-verification behavior.`;
+        }
+      } catch (exc) {
+        $('status').textContent = 'unreachable';
+        $('note').textContent = 'Cannot reach backend.';
+      }
+    }
+
+    loadStatus();
+
+    $('verify').addEventListener('click', async () => {
+      const fb = $('feedback');
+      fb.innerHTML = '';
+      if (!selfieSrc || !ktpSrc) {
+        fb.innerHTML = '<div class="error">Please upload both selfie and KTP images.</div>';
+        return;
+      }
+      const toBlob = async dataUrl => {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      };
+      const form = new FormData();
+      form.append('selfie', await toBlob(selfieSrc), 'selfie.jpg');
+      form.append('ktp', await toBlob(ktpSrc), 'ktp.jpg');
+      try {
+        $('verify').disabled = true;
+        $('verify').textContent = 'Verifying...';
+        const res = await fetch('/api/kyc/verify', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) {
+          fb.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
+          return;
+        }
+        if (!data.model_status.model_loaded) {
+          fb.innerHTML = `<div class="info">Note: backend is in fallback mode, so this verification uses generic embeddings rather than the IMGNet face model.</div>`;
+        }
+        $('m_img_sign').textContent = Number(data.img_sign).toFixed(4);
+        $('m_amp_img').textContent = Number(data.amp_img).toFixed(4);
+        $('m_chain').textContent = Number(data.chain_score).toFixed(4);
+        $('m_cosine').textContent = Number(data.cosine).toFixed(4);
+        $('metrics').style.display = 'grid';
+        const verdict = $('verdict');
+        verdict.style.display = 'block';
+        verdict.textContent = data.vote;
+        verdict.style.borderColor = voteColor(data.vote);
+        verdict.style.color = voteColor(data.vote);
+        window.__last_kyc_result = data;
+      } catch (exc) {
+        fb.innerHTML = `<div class="error">Request failed: ${escapeHtml(String(exc))}</div>`;
+      } finally {
+        $('verify').disabled = false;
+        $('verify').textContent = 'Verify Identity';
+      }
+    });
+
+    $('export_csv').addEventListener('click', async () => {
+      const data = window.__last_kyc_result || {};
+      const payload = {
+        vote: data.vote || '',
+        confidence: data.confidence || '',
+        img_sign: $('m_img_sign').textContent || '',
+        amp_img: $('m_amp_img').textContent || '',
+        chain_score: $('m_chain').textContent || '',
+        cosine: $('m_cosine').textContent || '',
+        chains: data.chains || '',
+        avg_chain: data.avg_chain || '',
+      };
+      const form = new FormData();
+      form.append('payload', JSON.stringify(payload));
+      const res = await fetch('/api/kyc/report/csv', { method: 'POST', body: form });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kyc_report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $('export_json').addEventListener('click', async () => {
+      const data = window.__last_kyc_result || {};
+      const payload = {
+        vote: data.vote || '',
+        confidence: data.confidence || '',
+        img_sign: $('m_img_sign').textContent || '',
+        amp_img: $('m_amp_img').textContent || '',
+        chain_score: $('m_chain').textContent || '',
+        cosine: $('m_cosine').textContent || '',
+        chains: data.chains || '',
+        avg_chain: data.avg_chain || '',
+      };
+      const form = new FormData();
+      form.append('payload', JSON.stringify(payload));
+      const res = await fetch('/api/kyc/report/json', { method: 'POST', body: form });
+      const result = await res.json();
+      if (result.report) {
+        const blob = new Blob([JSON.stringify(result.report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'kyc_report.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        fb.innerHTML = `<div class="error">${escapeHtml(result.error || 'Export failed')}</div>`;
+      }
+    });
+
+    function voteColor(v) {
+      if (v === 'MATCH') return '#10b981';
+      if (v === 'UNCERTAIN') return '#f59e0b';
+      return '#ef4444';
+    }
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+  </script>
+</body>
+</html>

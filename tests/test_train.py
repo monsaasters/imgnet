@@ -22,10 +22,11 @@ except Exception:
 
 class TestModel:
     def test_forward_shape(self):
-        model = IMGNet(emb_dim=128)
-        x = torch.zeros(1, 3, 112, 112)
-        out = model(x)
-        assert out.shape == (1, 128)
+        model = IMGNet(emb_dim=128).eval()
+        x = torch.zeros(2, 3, 112, 112)
+        with torch.no_grad():
+            out = model(x)
+        assert out.shape == (2, 128)
 
     def test_param_count(self):
         model = IMGNet(emb_dim=1024)

@@ -22,7 +22,7 @@ The proposed framework consists of three complementary metrics:
 2. **AMP IMG Score**
 3. **Chain Score**
 
-> **Note:** This work does **not** propose replacing cosine similarity. Instead, IMG is proposed as an *alternative* similarity metric. Experimental results suggest that the optimal similarity metric depends on how the embedding itself is learned.
+> **Note:** This work does **not** propose replacing cosine similarity. Instead, IMG is proposed as an *alternative* similarity metric. Experimental results suggest that the optimal metric depends on how the embedding itself is learned.
 
 ---
 
@@ -40,413 +40,162 @@ Consequently, similarity is evaluated by comparing relational patterns rather th
 
 <img width="1907" height="848" alt="image" src="https://github.com/user-attachments/assets/dc9610ae-6666-45e8-b1ae-ada814d91d92" />
 
-
 <img width="1907" height="981" alt="image" src="https://github.com/user-attachments/assets/16c28b28-a768-4665-b426-33fb00579856" />
 
-
 ---
 
-## Relational Training Objective
+## Installation
 
-Unlike ArcFace, which explicitly optimizes cosine similarity using Angular Margin Loss,
+### Package
 
-```math
-L_{ArcFace}
-=
--\log
-\frac
-{e^{s\cos(\theta_y+m)}}
-{e^{s\cos(\theta_y+m)}+\sum_j e^{s\cos\theta_j}}
-```
-
-the proposed method directly optimizes the desired similarity metric itself.
-
-For two embeddings
-
-```math
-E_1,E_2\in\mathbb{R}^{1024}
-```
-
-the objective is to maximize their **local sign agreement**.
-
-### Soft Sign Agreement
-
-For each embedding dimension,
-
-```math
-a_i=
-\frac{\tanh(\beta E_{1,i}E_{2,i})+1}{2}
-```
-
-where:
-
-- positive product → agreement
-- negative product → disagreement
-
-Unlike a hard sign comparison, the hyperbolic tangent provides a smooth differentiable approximation.
-
-### Sliding Window Aggregation
-
-For each sliding window,
-
-```math
-S_k=\sum_{i=k}^{k+W-1}a_i
-```
-
-where:
-
-- Window size **W = 11**
-- Threshold **T = 8**
-
-### Differentiable Matching Gate
-
-```math
-M_k=\sigma\left(50(S_k-T+0.5)\right)
-```
-
-which approximates
-
-```math
-M_k \approx
-\begin{cases}
-1 & \text{if } S_k \ge T \\
-0 & \text{if } S_k < T
-\end{cases}
-```
-
-while remaining differentiable.
-
-### IMG Sign Score
-
-```math
-IMG(E_1,E_2)=\frac1N\sum_{k=1}^{N}M_k
-```
-
-where
-
-```math
-N=d-W+1
-```
-
-### Relational Loss
-
-Positive pairs:
-
-```math
-L_{same}=(1-IMG)^2
-```
-
-Negative pairs:
-
-```math
-L_{diff}=IMG^2
-```
-
-Final objective:
-
-```math
-L=L_{same}+L_{diff}
-```
-
-This is exactly the objective used during training.
-
----
-
-## Training Pipeline
-
-| Hyperparameter | Value |
-|---|---:|
-| Dataset | CASIA-WebFace |
-| Identities | 10,572 |
-| Images | ~490k aligned faces |
-| Embedding Dimension | 1024 |
-| Batch Size | 16 |
-| Optimizer | Adam |
-| Learning Rate | 1×10⁻⁴ |
-| Epochs | 50 |
-| Warm-up | 5 |
-| Scheduler | Cosine Annealing |
-| Weight Decay | 1×10⁻⁵ |
-
-Positive pairs consist of two images belonging to the same identity, while negative pairs are randomly sampled from different identities.
-
-Unlike ArcFace, no angular-margin loss, cosine loss, or triplet loss is used. The network is optimized **entirely using the proposed relational objective**.
-
----
-
-## Why Does This Matter?
-
-Traditional face-recognition losses optimize embeddings for cosine similarity.
-
-The proposed approach instead optimizes embeddings directly for the intended inference metric.
-
-Consequently:
-
-- Embeddings trained with **Angular Margin Loss** naturally favor **cosine similarity**.
-- Embeddings trained with the proposed **relational loss** naturally favor **IMG Sign**.
-
-This suggests that **the similarity metric and the embedding loss should be designed together rather than independently.**
-
----
-
-## Key Idea
-
-| Metric | What it measures |
-|---|---|
-| **Cosine Similarity** | Global vector direction |
-| **IMG Sign** | Local relational sign patterns |
-| **AMP IMG** | Relational patterns + local amplitude consistency |
-| **Chain Score** | Continuity of matching relational patterns |
-
----
-
-## Architecture Used in This Paper
-
-**SW357 Block**
-
-```
-Conv2 → Conv3 → Conv4 → Conv5 → Conv6 → Conv7 → Conv8 → Conv9 → Conv10
-     → Global Average Pooling → FC → BatchNorm
-```
-
-| Property | Value |
-|---|---|
-| Parameters | 2,774,176 |
-| Model Size (FP32) | 10.58 MB |
-| Training Dataset | CASIA-WebFace (490k aligned images, 10,572 identities) |
-
----
-
-## Benchmark
-
-### SW357 Embedding (native)
-
-| Dataset | IMG Sign | AMP | Chain | Cosine |
-|----------|---------:|-------:|-------:|-------:|
-| LFW | 96.27% | 90.45% | 95.12% | 95.53% |
-| AgeDB-30 | 78.80% | 74.22% | 72.87% | 77.22% |
-| CALFW | 78.73% | 74.92% | 76.87% | 78.32% |
-| CPLFW | 76.85% | 68.88% | 75.23% | 74.62% |
-| **Combined** | **81.02%** | **77.41%** | **79.30%** | **79.49%** |
-
-### ArcFace Evaluation (relational metric tested on external embedding)
-
-| Dataset | IMG Sign | AMP | Chain | Cosine |
-|----------|---------:|-------:|-------:|-------:|
-| LFW | 99.58% | 99.48% | 97.02% | 99.82% |
-| AgeDB-30 | 96.85% | 93.92% | 73.62% | 98.07% |
-| CALFW | 95.62% | 94.52% | 84.18% | 96.10% |
-| CPLFW | 93.22% | 91.33% | 77.13% | 94.45% |
-
-**Observation:** Cosine remains the best metric for ArcFace because ArcFace is explicitly optimized using Angular Margin Loss. However, IMG Sign remains highly competitive despite never being used during ArcFace training.
-
----
-
-## Main Finding
-
-Results suggest that **Similarity Metric** and **Embedding Loss Function** should be considered together:
-
-- Embeddings trained with **Angular Margin Loss** naturally favor **cosine similarity**.
-- Embeddings trained with the proposed **relational loss** naturally favor **IMG Sign**.
-
-**Therefore, there is no universally best similarity metric.** The optimal metric depends on how the embedding space is learned.
-
----
-
-## Metric Definitions
-
-### IMG Sign Score
-
-```python
-def img_sign_score_np(e1, e2):
-    n = len(e1) - WINDOW_SIZE + 1
-    mc = 0
-    for i in range(n):
-        s1 = np.where(e1[i:i+WINDOW_SIZE] >= 0, 1, -1)
-        s2 = np.where(e2[i:i+WINDOW_SIZE] >= 0, 1, -1)
-        if np.sum(s1 == s2) >= THRESHOLD:
-            mc += 1
-    return mc / n
-```
-
-### AMP IMG Score
-
-```python
-def amp_img_score_np(e1, e2):
-    n = len(e1) - WINDOW_SIZE + 1
-    total = 0
-    for i in range(n):
-        w1 = e1[i:i+WINDOW_SIZE]
-        w2 = e2[i:i+WINDOW_SIZE]
-        s1 = np.where(w1 >= 0, 1, -1)
-        s2 = np.where(w2 >= 0, 1, -1)
-        if np.sum(s1 == s2) >= THRESHOLD:
-            a1 = np.mean(np.abs(w1))
-            a2 = np.mean(np.abs(w2))
-            total += max(0, 1 - abs(a1 - a2) / max(a1, a2, 1e-6))
-    return total / n
-```
-
-### Chain Score
-
-```python
-def chain_score_np(e1, e2):
-    n = len(e1) - WINDOW_SIZE + 1
-    flags = []
-    for i in range(n):
-        ...
-    total = sum(flags)
-    img_sign = total / n
-    ...
-    avg_chain = total / n_chains
-    diff = avg_chain - NEUTRAL_LEN
-    score = img_sign + (
-        REWARD_RATE * diff
-        if diff >= 0
-        else PUNISH_RATE * diff
-    ) / 100
-    return np.clip(score, 0, 1)
-```
-
----
-
-
-## Datasets
- 
-| Dataset | Link | Description |
-|---------|------|-------------|
-| CASIA-WebFace aligned | [Kaggle](https://www.kaggle.com/datasets/luongkhang04/aligned-casia) | Training dataset, aligned & cropped, 490k images, 10,572 identities |
-| Benchmark (LFW/AgeDB/CALFW/CPLFW) | [Kaggle](https://www.kaggle.com/datasets/yakhyokhuja/agedb-30-calfw-cplfw-lfw-aligned-112x112) | Validation datasets, pre-aligned 112×112 |
- 
-```
-train/
-  train_sw357_conv10_imgsign_a100.py  — Training on A100/Colab
-  train_eval_sw357_conv10_gtx.py      — 1-epoch test on GTX
-  train_eval_sw357_conv13_gtx.py      — Conv13 variant test
-  precrop_casia.py                    — Pre-crop CASIA with MTCNN
- 
-eval/
-  eval_lfw_gtx_chain_conv10.py        — Eval Conv10 + Chain Score (GTX)
-  eval_lfw_gtx_imgsign_conv10.py      — Eval Conv10 IMG Sign (GTX)
-  eval_benchmarks_a100.py             — Multi-dataset benchmark (A100)
-  eval_metric_comparison_a100.py      — FaceNet/ArcFace metric test
- 
-app/
-  face_compare_conv10.py              — Desktop UI comparison app (tkinter)
-```
- 
----
- 
-## Quickstart
- 
-### 1. Install dependencies
- 
 ```bash
-pip install torch torchvision facenet-pytorch insightface Pillow numpy scikit-learn
-```
- 
-### 2. Download Model
-
-download link:
-get on hugging face below
-Place `best_model_epoch39_plateau.pth` in your working directory.
- 
-### 3. Eval on LFW
- 
-```bash
-# Edit CKPT_PATH and LFW_DIR in the script first
-python eval_lfw_gtx_imgsign_conv10.py
-```
- 
-### 4. Run comparison app
- 
-```bash
-python face_compare_conv10.py
-```
- 
----
-
-## IMG as a Universal Similarity Library
-
-IMG is no longer just a face-recognition metric. The core metrics are packaged
-as a generic Python library that can be applied to **any 1-D embedding vectors**:
-face, audio, text, protein structure, recommendation vectors, etc.
- 
-### Install as a package
- 
-```bash
-# Editable install for development
-git clone https://github.com/imamgh11/imgnet.git
-cd imgnet
+# Core only
 pip install -e .
- 
+
 # With API extras
 pip install -e .[api]
+
+# With training extras
+pip install -e .[train]
+
+# Everything
+pip install -e .[all]
 ```
- 
-### Python API
- 
+
+### Conda
+
+```bash
+conda env create -f environment.yml
+conda activate imgnet
+```
+
+---
+
+## Usage Examples
+
+### Example 1: Compare two embeddings
+
 ```python
-from imgnet.metrics import batch_compare, img_sign_score, cosine_similarity
- 
-# Two embeddings from any model
-e1 = [...]  # list or 1-D numpy array
-e2 = [...]
- 
-# Single metric
-print(img_sign_score(e1, e2))      # IMG Sign Score
-print(cosine_similarity(e1, e2))   # cosine baseline
- 
-# Full comparison with voting
-result = batch_compare(e1, e2)
-print(result)
-# {
-#   "img_sign": 0.82,
-#   "amp_img": 0.79,
-#   "chain_score": 0.81,
-#   "cosine": 0.35,
-#   "vote": "MATCH",
-#   "chains": 12,
-#   "avg_chain": 6.5
-# }
+import numpy as np
+from imgnet.metrics import batch_compare
+
+a = np.load("emb_a.npy")
+b = np.load("emb_b.npy")
+result = batch_compare(a, b)
+print(result["vote"])  # MATCH / UNCERTAIN / DIFFERENT
 ```
- 
-### CLI
- 
+
+### Example 2: Use a single metric
+
+```python
+from imgnet.metrics import img_sign_score, amp_img_score, chain_score, cosine_similarity
+
+img = img_sign_score(a, b)
+amp = amp_img_score(a, b)
+chain = chain_score(a, b)
+cos = cosine_similarity(a, b)
+```
+
+### Example 3: Load model and verify faces
+
+```python
+from imgnet.visualizer import compute_embedding, model_status
+from imgnet.metrics import batch_compare
+from PIL import Image
+import numpy as np
+
+print(model_status())
+
+img1 = Image.open("photo1.jpg").convert("RGB")
+img2 = Image.open("photo2.jpg").convert("RGB")
+
+emb1 = compute_embedding(np.array(img1))
+emb2 = compute_embedding(np.array(img2))
+print(batch_compare(emb1, emb2))
+```
+
+### Example 4: Benchmark mode comparison
+
 ```bash
-# Verify two embedding files
-imgnet verify emb_a.npy emb_b.npy
- 
-# JSON output
-imgnet verify emb_a.npy emb_b.npy --json
- 
-# Single metric only
-imgnet verify emb_a.npy emb_b.npy --metric cosine
+python benchmark_eval.py --input benchmark_realistic --format npy_dir
 ```
- 
-Supported embedding formats:
-- `.npy` — numpy arrays saved with `np.save`
-- `.json` — JSON list, or object with `embedding` / `vector` key
- 
-### FastAPI server
- 
+
+### Example 5: Threshold sweep
+
 ```bash
-uvicorn imgnet.api:app --reload
-# Docs: http://127.0.0.1:8000/docs
+python threshold_sweep.py --input benchmark_realistic --format npy_dir
 ```
- 
-Example request:
- 
+
+### Example 6: Robustness benchmark
+
 ```bash
-curl -X POST "http://127.0.0.1:8000/v1/compare" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "a": [0.1, -0.5, ...],
-    "b": [0.2, -0.4, ...],
-    "threshold": 0.79
-  }'
+python robustness_by_mode.py --input benchmark_realistic --format npy_dir
 ```
- 
+
+### Example 7: Generate plots
+
+```bash
+python plot_benchmarks.py
+# Outputs PNG files to benchmark_plots/
+```
+
+### Example 8: Train a model
+
+```python
+from imgnet.train import IMGNet, TrainConfig, build_trainer, fit
+
+cfg = TrainConfig(
+    data_root="./data/casia-webface",
+    ckpt_root="./checkpoints",
+    num_epochs=50,
+    hybrid_mode=True,
+    hybrid_cosine_weight=0.5,
+)
+trainer = build_trainer(cfg)
+model = fit(trainer)
+```
+
+---
+
+## Troubleshooting
+
+### `ModuleNotFoundError: No module named 'torch'`
+
+The `imgnet` core package does not require PyTorch. If you see this error,
+you are importing a training-related module. Install torch explicitly:
+
+```bash
+pip install torch torchvision
+```
+
+### `model_loaded: false` in web demo
+
+The demo falls back to a deterministic embedding when:
+- PyTorch is not installed
+- MTCNN is not installed
+- Checkpoint `best_model_epoch39_plateau.pth` is missing
+
+To use the real IMGNet model:
+1. Install torch + torchvision + facenet-pytorch
+2. Place the checkpoint in one of these paths:
+   - `best_model_epoch39_plateau.pth` in repo root
+   - `~/.imgnet/best_model_epoch39_plateau.pth`
+   - Or keep the existing Windows path if available
+
+### Editable install fails with `setuptools.backends`
+
+Use a modern setuptools version:
+
+```bash
+pip install --upgrade pip setuptools wheel
+pip install -e .
+```
+
+### Tests fail with `batch_norm` error
+
+Some PyTorch versions require batch size > 1 during training mode.
+The tests now use `.eval()` and batch size 2 to avoid this.
+
 ---
 
 ## Voting System
@@ -477,7 +226,6 @@ When occluding specific facial regions (e.g., right eye) using a custom polygon 
 
 Same person, different photos: occluding the same region produces delta spikes at similar embedding dimensions across both photos
 Different people: occluding the same region produces delta spikes at different embedding dimensions, or in some cases near-zero delta for one person (e.g., when glasses obscure the region)
-
 
 Example (custom polygon, right eye region):
 
@@ -608,22 +356,50 @@ model = fit(trainer)
 ```
 
 ---
-
+ 
 ## Liveness & Reporting
-
+ 
 The demo app also includes a lightweight liveness-check prototype and report
 export endpoints. These are not a full anti-spoofing model, but demonstrate
 how IMG metrics could be used in a liveness workflow.
-
+ 
 Web demo endpoints:
 - `POST /api/liveness` — heuristic liveness check from 2 uploaded images
 - `POST /api/report/csv` — export comparison/liveness result as CSV
 - `POST /api/report/json` — export result as JSON with generated timestamp
-
+ 
 UI:
 - **Check Liveness** button on the demo page
 - **Export CSV** / **Export JSON** buttons to download result files
-
+ 
+---
+ 
+## Offline KYC App
+ 
+This fork also includes an offline KYC verification app under `kyc_app/`.
+It uses the same IMGNet metrics and model inference path, but wrapped
+in a verification flow:
+ 
+1. Upload selfie + KTP photo
+2. Detect/crop faces using MTCNN
+3. Generate embeddings using IMGNet model
+4. Compare with IMG metrics + voting
+5. Return vote + confidence
+6. Export CSV/JSON report
+ 
+Run:
+```bash
+PYTHONPATH=src uvicorn kyc_app.main:app --host 0.0.0.0 --port 8012
+# Open http://0.0.0.0:8012
+```
+ 
+Endpoints:
+- `GET /` — KYC UI
+- `GET /api/health` — backend + model status
+- `POST /api/kyc/verify` — verify selfie vs KTP
+- `POST /api/kyc/report/csv` — export result as CSV
+- `POST /api/kyc/report/json` — export result as JSON
+ 
 ---
 ## Citation
  
@@ -633,7 +409,7 @@ If you use this work, please cite via:
 - **Hugging Face:** https://huggingface.co/imghost11/imgnetV1
 
 ---
-
+ 
 ## License
-
+ 
 This project is licensed under the **MIT License**.
