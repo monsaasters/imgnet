@@ -118,8 +118,10 @@ def main(argv: list[str] | None = None) -> int:
 
     chains_out = 0
     avg_chain_out = 0.0
+    score = float(score)
     if args.metric == "chain_score":
         score, chains_out, avg_chain_out = chain_fn(e1, e2)
+        score = float(score)
 
     if args.json:
         out = {"metric": args.metric, "score": float(score)}
