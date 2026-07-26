@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ImgNet Demo</title>
+  <style>
+    :root {
+      bg: #0b0f1a;
+      card: #111827;
+      border: #1f2937;
+      text: #e5e7eb;
+      muted: #9ca3af;
+      accent: #6366f1;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #0b0f1a;
+      color: #e5e7eb;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      background: #111827;
+    }
+    h1 {
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      color: #9ca3af;
+    }
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      background: #111827;
+      padding: 16px;
+    }
+    .drop {
+      border: 1px dashed #374151;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: border-color .15s ease;
+    }
+    .drop.dragover { border-color: #6366f1; color: #e5e7eb; }
+    .preview {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview img {
+      max-height: 180px;
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+    }
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #6366f1;
+      color: white;
+    }
+    button.secondary {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+    }
+    .results {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .result-item {
+      border: 1px solid #1f2937;
+      border-radius: 10px;
+      background: #0b0f1a;
+      padding: 10px;
+      text-align: center;
+    }
+    .label {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .verdict {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #0b0f1a;
+    }
+    .error {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #7f1d1d;
+      color: #fecaca;
+      border: 1px solid #991b1b;
+    }
+    .note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .results { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>ImgNet Demo — Similarity</h1>
+      <div class="badge" id="status">local</div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="drop" id="drop_a">Drop Image A or click to upload<input type="file" id="file_a" accept="image/*" hidden /></div>
+        <div class="preview" id="preview_a"></div>
+      </div>
+      <div class="card">
+        <div class="drop" id="drop_b">Drop Image B or click to upload<input type="file" id="file_b" accept="image/*" hidden /></div>
+        <div class="preview" id="preview_b"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="compare">Compare</button>
+      <button id="clear" class="secondary">Clear</button>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div class="results" id="results" style="display:none">
+      <div class="result-item"><div class="label">IMG Sign</div><div class="value" id="v_img_sign">—</div></div>
+      <div class="result-item"><div class="label">AMP IMG</div><div class="value" id="v_amp_img">—</div></div>
+      <div class="result-item"><div class="label">Chain</div><div class="value" id="v_chain">—</div></div>
+      <div class="result-item"><div class="label">Cosine</div><div class="value" id="v_cosine">—</div></div>
+    </div>
+
+    <div class="verdict" id="verdict" style="display:none"></div>
+    <div class="note">Uses generic IMG metrics. Face model fallback is content-based when no checkpoint is present.</div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const dropA = $('drop_a');
+    const dropB = $('drop_b');
+    const fileA = $('file_a');
+    const fileB = $('file_b');
+    let srcA = null, srcB = null;
+
+    function wire(drop, input, preview, setSrc) {
+      drop.addEventListener('click', () => input.click());
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault();
+        drop.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) read(file, preview, setSrc);
+      });
+      input.addEventListener('change', () => {
+        if (input.files[0]) read(input.files[0], preview, setSrc);
+      });
+    }
+
+    function read(file, preview, setSrc) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSrc(reader.result);
+        preview.innerHTML = `<img src="${reader.result}" alt="preview" />`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    wire(dropA, fileA, $('preview_a'), v => srcA = v);
+    wire(dropB, fileB, $('preview_b'), v => srcB = v);
+
+    $('clear').addEventListener('click', () => {
+      srcA = null; srcB = null;
+      $('preview_a').innerHTML = ''; $('preview_b').innerHTML = '';
+      $('results').style.display = 'none';
+      $('verdict').style.display = 'none';
+      $('feedback').innerHTML = '';
+      fileA.value = ''; fileB.value = '';
+    });
+
+    $('compare').addEventListener('click', async () => {
+      const fb = $('feedback');
+      fb.innerHTML = '';
+      if (!srcA || !srcB) {
+        fb.innerHTML = '<div class="error">Please upload both images first.</div>';
+        return;
+      }
+      const toBlob = async dataUrl => {
+        const res = await fetch(dataUrl);
+        return await res.blob();
+      };
+      const form = new FormData();
+      form.append('image_a', await toBlob(srcA), 'a.jpg');
+      form.append('image_b', await toBlob(srcB), 'b.jpg');
+      try {
+        const res = await fetch('/api/compare', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.error) {
+          fb.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
+          return;
+        }
+        $('v_img_sign').textContent = Number(data.img_sign).toFixed(4);
+        $('v_amp_img').textContent = Number(data.amp_img).toFixed(4);
+        $('v_chain').textContent = Number(data.chain_score).toFixed(4);
+        $('v_cosine').textContent = Number(data.cosine).toFixed(4);
+        $('results').style.display = 'grid';
+        const verdict = $('verdict');
+        verdict.style.display = 'block';
+        verdict.textContent = data.vote;
+        verdict.style.borderColor = voteColor(data.vote);
+        verdict.style.color = voteColor(data.vote);
+      } catch (exc) {
+        fb.innerHTML = `<div class="error">Request failed: ${escapeHtml(String(exc))}</div>`;
+      }
+    });
+
+    function voteColor(v) {
+      if (v === 'MATCH') return '#10b981';
+      if (v === 'UNCERTAIN') return '#f59e0b';
+      return '#ef4444';
+    }
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+  </script>
+</body>
+</html>
