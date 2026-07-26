@@ -18,10 +18,16 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset, Subset
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader, Dataset, Subset
+
+    TORCH_OK = True
+except Exception:
+    TORCH_OK = False
 
 try:
     from PIL import Image
@@ -50,7 +56,7 @@ class TrainConfig:
     emb_dim: int = 1024
     max_pairs_per_identity: int = 300
     num_workers: int = 4
-    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    device: str = "cpu"
     seed: int = 42
     name: str = "SW357_conv10_imgsign"
     resume: bool = True
