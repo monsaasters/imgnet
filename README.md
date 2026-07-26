@@ -365,7 +365,90 @@ python face_compare_conv10.py
 ```
  
 ---
+
+## IMG as a Universal Similarity Library
+
+IMG is no longer just a face-recognition metric. The core metrics are packaged
+as a generic Python library that can be applied to **any 1-D embedding vectors**:
+face, audio, text, protein structure, recommendation vectors, etc.
  
+### Install as a package
+ 
+```bash
+# Editable install for development
+git clone https://github.com/imamgh11/imgnet.git
+cd imgnet
+pip install -e .
+ 
+# With API extras
+pip install -e .[api]
+```
+ 
+### Python API
+ 
+```python
+from imgnet.metrics import batch_compare, img_sign_score, cosine_similarity
+ 
+# Two embeddings from any model
+e1 = [...]  # list or 1-D numpy array
+e2 = [...]
+ 
+# Single metric
+print(img_sign_score(e1, e2))      # IMG Sign Score
+print(cosine_similarity(e1, e2))   # cosine baseline
+ 
+# Full comparison with voting
+result = batch_compare(e1, e2)
+print(result)
+# {
+#   "img_sign": 0.82,
+#   "amp_img": 0.79,
+#   "chain_score": 0.81,
+#   "cosine": 0.35,
+#   "vote": "MATCH",
+#   "chains": 12,
+#   "avg_chain": 6.5
+# }
+```
+ 
+### CLI
+ 
+```bash
+# Verify two embedding files
+imgnet verify emb_a.npy emb_b.npy
+ 
+# JSON output
+imgnet verify emb_a.npy emb_b.npy --json
+ 
+# Single metric only
+imgnet verify emb_a.npy emb_b.npy --metric cosine
+```
+ 
+Supported embedding formats:
+- `.npy` — numpy arrays saved with `np.save`
+- `.json` — JSON list, or object with `embedding` / `vector` key
+ 
+### FastAPI server
+ 
+```bash
+uvicorn imgnet.api:app --reload
+# Docs: http://127.0.0.1:8000/docs
+```
+ 
+Example request:
+ 
+```bash
+curl -X POST "http://127.0.0.1:8000/v1/compare" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "a": [0.1, -0.5, ...],
+    "b": [0.2, -0.4, ...],
+    "threshold": 0.79
+  }'
+```
+ 
+---
+
 ## Voting System
  
 Three metrics, one threshold (from IMG Sign sweep):

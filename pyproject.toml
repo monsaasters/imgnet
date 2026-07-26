@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imgnet"
+version = "0.1.0"
+description = "Universal similarity metrics library for any embedding space."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Imam Ghozali", email = "imam.gh98@gmail.com"}]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.6",
+    "python-multipart>=0.0.9",
+]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+]
+
+[project.scripts]
+imgnet = "imgnet.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+imgnet = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
